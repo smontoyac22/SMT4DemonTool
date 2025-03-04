@@ -317,6 +317,11 @@ h1 {
     color: #999;
 }
 
+.element-repel {
+    background-color: #ffff55;
+    color: #222;
+}
+
 .element-tooltip {
     position: absolute;
     bottom: 100%;
