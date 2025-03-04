@@ -457,7 +457,21 @@
                 const skillsList = document.createElement('div');
                 skillsList.className = 'skills-list';
 
-                if (demon.Skills) {
+                if (Array.isArray(demon.Skills)) {
+                    // If skills are in an array
+                    demon.Skills.forEach(skillName => {
+                        const skillItem = document.createElement('div');
+                        skillItem.className = 'skill-item';
+
+                        const skillNameSpan = document.createElement('span');
+                        skillNameSpan.className = 'skill-name';
+                        skillNameSpan.textContent = skillName;
+
+                        skillItem.appendChild(skillNameSpan);
+                        skillsList.appendChild(skillItem);
+                    });
+                } else if (typeof demon.Skills === 'object') {
+                    // If skills are in a key-value format
                     for (const [skillName, skillLevel] of Object.entries(demon.Skills)) {
                         const skillItem = document.createElement('div');
                         skillItem.className = 'skill-item';
@@ -468,10 +482,10 @@
 
                         const skillLevelSpan = document.createElement('span');
                         skillLevelSpan.className = 'skill-level';
-                        skillLevelSpan.textContent = `Lv. ${skillLevel}`;
+                        skillLevelSpan.textContent = skillLevel ? `Lv. ${skillLevel}` : '';
 
                         skillItem.appendChild(skillNameSpan);
-                        skillItem.appendChild(skillLevelSpan);
+                        if (skillLevel) skillItem.appendChild(skillLevelSpan);
                         skillsList.appendChild(skillItem);
                     }
                 } else {
