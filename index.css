@@ -27,7 +27,6 @@ h1 {
 }
 
 .container {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -71,7 +70,7 @@ h1 {
     align-items: center;
     width: 100%;
     padding: 8px 15px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     background-color: #222;
     border: 2px solid #7dff7d;
     color: white;
