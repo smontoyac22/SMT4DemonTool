@@ -73,7 +73,7 @@
         let filtersVisible;
 
         // Pagination settings
-        let demonsPerPage = 9;
+        let demonsPerPage = 24;
         let currentPage = 1;
         let filteredDemons = [];
         let displayedDemons = 0;
@@ -445,6 +445,45 @@
                 elementsSection.appendChild(elementsGrid);
                 content.appendChild(elementsSection);
 
+                // Skills Section
+                const skillsSection = document.createElement('div');
+                skillsSection.className = 'skills-section';
+
+                const skillsTitle = document.createElement('div');
+                skillsTitle.className = 'section-title';
+                skillsTitle.textContent = 'Skills';
+                skillsSection.appendChild(skillsTitle);
+
+                const skillsList = document.createElement('div');
+                skillsList.className = 'skills-list';
+
+                if (demon.Skills) {
+                    for (const [skillName, skillLevel] of Object.entries(demon.Skills)) {
+                        const skillItem = document.createElement('div');
+                        skillItem.className = 'skill-item';
+
+                        const skillNameSpan = document.createElement('span');
+                        skillNameSpan.className = 'skill-name';
+                        skillNameSpan.textContent = skillName;
+
+                        const skillLevelSpan = document.createElement('span');
+                        skillLevelSpan.className = 'skill-level';
+                        skillLevelSpan.textContent = `Lv. ${skillLevel}`;
+
+                        skillItem.appendChild(skillNameSpan);
+                        skillItem.appendChild(skillLevelSpan);
+                        skillsList.appendChild(skillItem);
+                    }
+                } else {
+                    const noSkills = document.createElement('div');
+                    noSkills.className = 'no-skills';
+                    noSkills.textContent = 'No skills available';
+                    skillsList.appendChild(noSkills);
+                }
+
+                skillsSection.appendChild(skillsList);
+                content.appendChild(skillsSection);
+
                 // Assemble the card
                 card.appendChild(header);
                 card.appendChild(content);
@@ -457,7 +496,7 @@
 
                 elementValues.forEach(element => {
                     // For touch devices
-                    element.addEventListener('touchstart', { passive: true }, function (e) {
+                    element.addEventListener('touchstart', function (e) {
                         e.preventDefault();
                         // Close any open tooltips first
                         document.querySelectorAll('.element-value.tooltip-visible').forEach(openElement => {
@@ -481,7 +520,7 @@
                 });
 
                 // Close tooltips when tapping elsewhere
-                document.addEventListener('touchstart', { passive: true }, function (e) {
+                document.addEventListener('touchstart', function (e) {
                     if (!e.target.closest('.element-value')) {
                         document.querySelectorAll('.element-value.tooltip-visible').forEach(element => {
                             element.classList.remove('tooltip-visible');
