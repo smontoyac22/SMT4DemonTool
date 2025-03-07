@@ -7,6 +7,76 @@
     <meta name="description" content="App to search for stats, abilities, weaknesses, and more demon information from SMT4. ">
     <title>SMT4 Demon Tool</title>
     <link rel="stylesheet" href="./index.css">
+    <style>
+        /* Favorites button and section styles */
+        .favorite-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #ccc;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+        .favorite-button:hover {
+            transform: scale(1.2);
+        }
+        .favorite-button.active {
+            color: gold;
+        }
+        .demon-card {
+            position: relative;
+        }
+        
+        .view-toggle {
+            display: flex;
+            margin-bottom: 15px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .view-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .view-toggle button.active {
+            background: #555;
+            font-weight: bold;
+        }
+        
+        .favorites-empty {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+            background: rgba(0,0,0,0.1);
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .favorites-count {
+            display: inline-block;
+            background: gold;
+            color: #333;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            line-height: 20px;
+            text-align: center;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,6 +88,11 @@
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search demons by name..." autocomplete="off">
             <button id="searchClear" class="search-clear" aria-label="Clear search">✕</button>
+        </div>
+
+        <div class="view-toggle">
+            <button id="allDemonsBtn" class="active">All Demons</button>
+            <button id="favoritesBtn">Favorites <span id="favoritesCount" class="favorites-count">0</span></button>
         </div>
 
         <button id="filtersToggle" class="filters-toggle">
@@ -58,6 +133,7 @@
         <div id="loading" class="loading">Loading demon data...</div>
         <div id="demonList" class="demon-list"></div>
         <div id="noResults" class="no-results" style="display: none;">No demons found matching your search.</div>
+        <div id="emptyFavorites" class="favorites-empty" style="display: none;">You haven't added any demons to your favorites yet.</div>
 
         <div id="loadMoreContainer" class="load-more-container" style="display: none;">
             <button id="loadMoreButton" class="load-more-button">Load More Demons</button>
@@ -71,6 +147,8 @@
         let currentSort = { field: 'Name', direction: 'asc' };
         let currentFilter = '';
         let filtersVisible;
+        let favorites = [];
+        let viewMode = 'all'; // 'all' or 'favorites'
 
         // Pagination settings
         let demonsPerPage = 24;
@@ -121,6 +199,30 @@
             const loadMoreContainer = document.getElementById('loadMoreContainer');
             const displayedCountElement = document.getElementById('displayedCount');
             const totalCountElement = document.getElementById('totalCount');
+            const allDemonsBtn = document.getElementById('allDemonsBtn');
+            const favoritesBtn = document.getElementById('favoritesBtn');
+            const emptyFavoritesElement = document.getElementById('emptyFavorites');
+            const favoritesCountElement = document.getElementById('favoritesCount');
+
+            // Load favorites from localStorage on startup
+            loadFavorites();
+
+            // Toggle view between all demons and favorites
+            allDemonsBtn.addEventListener('click', function() {
+                viewMode = 'all';
+                allDemonsBtn.classList.add('active');
+                favoritesBtn.classList.remove('active');
+                currentPage = 1;
+                filterAndSortDemons();
+            });
+
+            favoritesBtn.addEventListener('click', function() {
+                viewMode = 'favorites';
+                favoritesBtn.classList.add('active');
+                allDemonsBtn.classList.remove('active');
+                currentPage = 1;
+                filterAndSortDemons();
+            });
 
             // Toggle filters visibility
             filtersToggle.addEventListener('click', function () {
@@ -213,23 +315,48 @@
                 });
 
             function filterAndSortDemons() {
-                // Apply filter if we have a search term
+                // First filter by view mode
+                let baseDemons = [];
+                if (viewMode === 'all') {
+                    baseDemons = [...demonData];
+                    emptyFavoritesElement.style.display = 'none';
+                } else {
+                    // Filter to only show favorites
+                    baseDemons = demonData.filter(demon => favorites.includes(demon.Name));
+                    
+                    // Show empty message if no favorites
+                    if (baseDemons.length === 0) {
+                        demonListElement.innerHTML = '';
+                        noResultsElement.style.display = 'none';
+                        emptyFavoritesElement.style.display = 'block';
+                        loadMoreContainer.style.display = 'none';
+                        displayedDemons = 0;
+                        totalDemons = 0;
+                        return;
+                    } else {
+                        emptyFavoritesElement.style.display = 'none';
+                    }
+                }
+
+                // Then apply search filter if we have a search term
                 if (currentFilter) {
-                    filteredDemons = demonData.filter(demon =>
+                    filteredDemons = baseDemons.filter(demon =>
                         demon.Name.toLowerCase().includes(currentFilter));
                 } else {
-                    filteredDemons = [...demonData];
+                    filteredDemons = [...baseDemons];
                 }
 
                 // Check if we have results after filtering
                 if (filteredDemons.length === 0) {
                     demonListElement.innerHTML = '';
                     noResultsElement.style.display = 'block';
+                    emptyFavoritesElement.style.display = 'none';
                     loadMoreContainer.style.display = 'none';
                     displayedDemons = 0;
                     totalDemons = 0;
                 } else {
                     noResultsElement.style.display = 'none';
+                    emptyFavoritesElement.style.display = 'none';
 
                     // Sort the filtered demons
                     sortFilteredDemons();
@@ -313,6 +440,32 @@
                 const card = document.createElement('div');
                 card.className = 'demon-card fade-in';
                 card.style.animationDelay = `${(index % demonsPerPage) * 0.05}s`;
+                card.dataset.demonName = demon.Name;
+
+                // Create favorite button
+                const favButton = document.createElement('button');
+                favButton.className = 'favorite-button';
+                favButton.setAttribute('aria-label', 'Toggle favorite');
+                favButton.textContent = '★';
+                
+                // Set active class if this demon is favorited
+                if (favorites.includes(demon.Name)) {
+                    favButton.classList.add('active');
+                }
+                
+                // Add event listener for the favorite button
+                favButton.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent card expansion if implemented
+                    toggleFavorite(demon.Name);
+                    this.classList.toggle('active');
+                    
+                    // If in favorites view and removing a favorite, remove the card
+                    if (viewMode === 'favorites' && !favorites.includes(demon.Name)) {
+                        filterAndSortDemons();
+                    }
+                });
+                
+                card.appendChild(favButton);
 
                 // Create header
                 const header = document.createElement('div');
@@ -544,6 +697,40 @@
                         });
                     }
                 });
+            }
+
+            // Favorites functionality
+            function toggleFavorite(demonName) {
+                const index = favorites.indexOf(demonName);
+                if (index === -1) {
+                    // Add to favorites
+                    favorites.push(demonName);
+                } else {
+                    // Remove from favorites
+                    favorites.splice(index, 1);
+                }
+                
+                // Save to localStorage
+                saveFavorites();
+                
+                // Update the favorites counter
+                updateFavoritesCount();
+            }
+            
+            function saveFavorites() {
+                localStorage.setItem('smt4-favorites', JSON.stringify(favorites));
+            }
+            
+            function loadFavorites() {
+                const saved = localStorage.getItem('smt4-favorites');
+                if (saved) {
+                    favorites = JSON.parse(saved);
+                    updateFavoritesCount();
+                }
+            }
+            
+            function updateFavoritesCount() {
+                favoritesCountElement.textContent = favorites.length;
             }
         });
     </script>
